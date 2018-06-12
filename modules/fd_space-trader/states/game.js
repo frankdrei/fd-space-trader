@@ -261,7 +261,7 @@
 
             if (me.game.input.activePointer.leftButton.isDown ) {
                 if (me.game.time.now > firetimer) {
-                    me.fireBullet(1);
+                    me.fireBullet(1,1);
                     me.blaster.play();
                 }
             }
@@ -292,9 +292,9 @@
         },
 
 
-        fireBullet: function (mass) {
+        fireBullet: function (mass, health) {
 
-            var object = this.spawnObject(this.bullets, this.bulletCollisionGroup, this.boulderCollisionGroup, mass, health);
+            var object = this.spawnObject(this.bullets, this.bulletCollisionGroup, this.boulderCollisionGroup);
             object.autoCull = true;
             object.outOfCameraBoundsKill = true;
             object.body.dampening = 0;
