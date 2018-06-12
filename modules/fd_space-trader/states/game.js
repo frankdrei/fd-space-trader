@@ -17,14 +17,15 @@
     var ship;
     var emitter;
     var cursors;
+    var allCollisionGroups = [];
     var universe = [];
     var UNIVERSEX = 10000;
     var UNIVERSEY = 10000;
     var MAXSYSTEMS = 2000;
-    var WORLDSIZEX = 100000;
-    var WORLDSIZEY = 100000;
+    var WORLDSIZEX = 10000;
+    var WORLDSIZEY = 10000;
     var MAXBOULDERS = 100;
-    var MAXBULLETS = 40;
+    var MAXBULLETS = 100;
     var BULLETLIFESPAN = 6000;
     var firetimer = 0;
     var FIRERATE = 100;
@@ -91,45 +92,39 @@
             // Create collision groups
             me.shipCollisionGroup = me.game.physics.p2.createCollisionGroup();
             me.boulderCollisionGroup = me.game.physics.p2.createCollisionGroup();
-            //me.boulder128CollisionGroup = me.game.physics.p2.createCollisionGroup();
+            me.lootCollisionGroup = me.game.physics.p2.createCollisionGroup();
             me.bulletCollisionGroup = me.game.physics.p2.createCollisionGroup();
 
-            // Create a bunch of boulders
-            me.paperboulders300 = this.createObjects("PaperBoulder300", MAXBOULDERS, 50);
-            me.boulders128 = this.createObjects("Boulder128", MAXBOULDERS, 100);
-            me.boulders = this.createObjects("Boulder", MAXBOULDERS, 100);
+            me.allCollisionGroups = [me.shipCollisionGroup, me.bulletCollisionGroup, me.boulderCollisionGroup, me.lootCollisionGroup];
 
+
+            // Create a bunch of boulders
+            me.paperboulders300 = this.createObjects("PaperBoulder300", MAXBOULDERS, 150);
+            me.paperboulders80 = this.createObjects("PaperBoulder80", MAXBOULDERS, 50);
 
             // Create a bunch of Bulets
             me.bullets = me.createObjects("Bullet", MAXBULLETS, 1);
 
+            // Create a bunch of Loot
+            me.loot = me.createObjects("Barren64", 50, 1);
+
             // Create Ship
-            me.ship = me.createShip("Ship1", me.shipCollisionGroup, [me.shipCollisionGroup, me.bulletCollisionGroup, me.boulderCollisionGroup], 100, 2);
-
-
+            me.ship = me.createShip("Ship1", me.shipCollisionGroup, me.allCollisionGroups, 10, 2000);
 
             // This is required so that the groups will collide with the world bounds
             this.game.physics.p2.updateBoundsCollisionGroup();
 
-
-
-
-            me.boulders.forEach(function (child) {
-                me.spawnBolders(me.boulders, me.boulderCollisionGroup, [me.shipCollisionGroup, me.bulletCollisionGroup, me.boulderCollisionGroup], 500);
-            });
-
-
-            me.boulders128.forEach(function (child) {
-               me.spawnBolders(me.boulders128, me.boulderCollisionGroup, [me.shipCollisionGroup, me.bulletCollisionGroup, me.boulderCollisionGroup], 5000);
-            });
             me.paperboulders300.forEach(function (child) {
-                me.spawnBolders(me.paperboulders300, me.boulderCollisionGroup, [me.shipCollisionGroup, me.bulletCollisionGroup, me.boulderCollisionGroup], 5000);
-             });
- 
+                me.spawnBolders(me.paperboulders300, me.boulderCollisionGroup, me.allCollisionGroups, 500, 50);
+            });
+
+            me.paperboulders80.forEach(function (child) {
+                me.spawnBolders(me.paperboulders80, me.boulderCollisionGroup, me.allCollisionGroups, 50, 5);
+
+            });
 
             // Enable collision callbacks
             this.game.physics.p2.setImpactEvents(true);
-            
 
         },
 
@@ -167,13 +162,13 @@
           * @param {integer} mass Masse
           * @return {object} Schiffsobject  
           */
-        createShip: function (objectName, collisionGroup, collisionGroups, health, mass) {
+        createShip: function (objectName, collisionGroup, collisionGroups, mass, health) {
             // TODO evtl ein komplettes Object für die Shiffe übergeben incl aller Parameter
 
             // Add the player to the game
             var object = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, objectName);
 
-            // Add Hp to Ship
+            // Add Health to Ship
             object.health = health;
 
             // Enable physics, use "true" to enable debug drawing
@@ -266,7 +261,7 @@
 
             if (me.game.input.activePointer.leftButton.isDown ) {
                 if (me.game.time.now > firetimer) {
-                    me.fireBullet(10000, 1);
+                    me.fireBullet(1);
                     me.blaster.play();
                 }
             }
@@ -289,7 +284,7 @@
             me.game.debug.text("pos: " + Math.floor(me.ship.position.x) + " / " + Math.floor(me.ship.position.y), 2, 20, "#00ff00");
             var shipspeed = Math.sqrt(Math.pow(this.ship.body.velocity.x, 2) + Math.pow(this.ship.body.velocity.x, 2));
             me.game.debug.text("speed: " + shipspeed , 2, 40, "#00ff00");
-            me.game.debug.text("HP: " + Math.floor(me.ship.hp), 2, 50, "#00ff00");
+            me.game.debug.text("Ship Health: " + Math.floor(me.ship.health), 2, 50, "#00ff00");
 
 
             
@@ -297,17 +292,17 @@
         },
 
 
-        fireBullet: function (lifespan, weight) {
+        fireBullet: function (mass) {
 
-            var object = this.spawnObject(this.bullets, this.bulletCollisionGroup, [this.boulderCollisionGroup, this.boulder128CollisionGroup]);
-            //object.body.data.gravityScale = weight;
+            var object = this.spawnObject(this.bullets, this.bulletCollisionGroup, this.boulderCollisionGroup, mass, health);
             object.autoCull = true;
             object.outOfCameraBoundsKill = true;
             object.body.dampening = 0;
-            object.body.mass = weight;
             object.lifespan = BULLETLIFESPAN;
             var angle = this.game.physics.arcade.angleToPointer(this.ship) + Math.PI / 2;
-            object.reset(this.ship.body.x + Math.sin(angle) *30 , this.ship.body.y + Math.cos(angle) * -30);
+            object.reset(this.ship.body.x + Math.sin(angle) * 35 , this.ship.body.y + Math.cos(angle) * -42);
+            object.body.mass = mass;
+            object.health = health;
             object.body.rotation = angle;
             object.body.moveForward(1000);
             object.body.velocity.x += this.ship.body.velocity.x;
@@ -317,24 +312,26 @@
         },
 
 
-        spawnBolders: function (boulders, collisionGroup, groupstoCollide, weight) {
+        spawnBolders: function (boulders, collisionGroup, groupstoCollide, mass, health) {
 
             // Spawn new object
-            var object = this.spawnObject(boulders, collisionGroup, groupstoCollide, weight);
-
+            var object = this.spawnObject(boulders, collisionGroup, groupstoCollide);
             // Set object's position and velocity
+            object.reset()
             object.reset(this.random.integerInRange(0, WORLDSIZEX), this.random.integerInRange(0, WORLDSIZEY));
             object.body.velocity.x = this.random.integerInRange(-50, 50);
             object.body.velocity.y = this.random.integerInRange(-50, 50);
+            object.body.mass = mass;
+            object.health = health;
+
+            return object;
             
         },
 
-
-        spawnObject: function (objects, collisionGroup, collisionGroups, weight) {
+        spawnObject: function (objects, collisionGroup, collisionGroups) {
 
             var object = objects.getFirstExists(false);
             object.body.setCollisionGroup(collisionGroup);
-            object.body.mass = weight;
             object.body.collides(collisionGroups, this.hit, this);
 
             return object;
@@ -345,12 +342,14 @@
             
             if (object2.sprite.key === 'Bullet') {
                 object2.sprite.lifespan = 100;
-                object1.sprite.hp -= 1;
+                object1.sprite.health -= 1;
                 this.hitsound.play();
-                if (object1.sprite.hp <= 0) {
-                    object1.sprite.kill();
-                    this.explosion.play();
-                }
+                if (object1.sprite.health <= 0)
+                    {
+                        object1.sprite.alive = false;
+                        object1.sprite.kill();
+                        this.explosion.play();
+                    }
             }
             
         },
@@ -358,14 +357,14 @@
 
         shiphit: function (object1, object2) {
 
-            object1.sprite.hp -= object2.mass;
-            object2.sprite.hp -= object1.mass;
+            object1.sprite.health -= object2.mass;
+            object2.sprite.health -= object1.mass;
             this.hitsound.play();
-            if (object2.sprite.hp <= 0) {
+            if (object2.sprite.health <= 0) {
                 object2.sprite.kill();
                 this.explosion.play();
             }
-            if (object1.sprite.hp <= 0) {
+            if (object1.sprite.health <= 0) {
                 this.explosion.play();
                 this.game.state.start("GameOver");
             }

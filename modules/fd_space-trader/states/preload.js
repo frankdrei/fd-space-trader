@@ -22,11 +22,10 @@
             this.game.load.image("Moon1", "assets/moon1.png");
             this.game.load.image("Pluto1", "assets/pluto1.png");
             this.game.load.image("White", "assets/white.png");
-            this.game.load.image("Boulder", "assets/boulder.png");
-            this.game.load.image("Boulder128", "assets/boulder128.png");
+            this.game.load.image("Barren64", "assets/barren64x44.png");
+            this.game.load.image("PaperBoulder80", "assets/boulder80x80.png");
             this.game.load.image("PaperBoulder300", "assets/boulder300x300.png");
             this.game.load.image("Bullet", "assets/bullet.png");
-            this.game.load.image("Ship", "assets/ship.png");
             this.game.load.image("Ship1", "assets/ship1.png");
             this.game.load.image("Ship2", "assets/ship2.png");
             this.game.load.physics("sprite_physics", "assets/sprite_physics.json");
