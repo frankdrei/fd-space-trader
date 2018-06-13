@@ -22,8 +22,8 @@
     var UNIVERSEX = 10000;
     var UNIVERSEY = 10000;
     var MAXSYSTEMS = 2000;
-    var WORLDSIZEX = 10000;
-    var WORLDSIZEY = 10000;
+    var WORLDSIZEX = 20000;
+    var WORLDSIZEY = 20000;
     var MAXBOULDERS = 100;
     var MAXBULLETS = 100;
     var BULLETLIFESPAN = 6000;
@@ -99,8 +99,8 @@
 
 
             // Create a bunch of boulders
-            me.paperboulders300 = this.createObjects("PaperBoulder300", MAXBOULDERS, 150);
-            me.paperboulders80 = this.createObjects("PaperBoulder80", MAXBOULDERS, 50);
+            me.paperboulders300 = this.createObjects("PaperBoulder300", MAXBOULDERS + 1000, 150);
+            me.paperboulders80 = this.createObjects("PaperBoulder80", MAXBOULDERS + 1000, 50);
 
             // Create a bunch of Bulets
             me.bullets = me.createObjects("Bullet", MAXBULLETS, 1);
@@ -113,15 +113,16 @@
 
             // This is required so that the groups will collide with the world bounds
             this.game.physics.p2.updateBoundsCollisionGroup();
-
-            me.paperboulders300.forEach(function (child) {
+            
+            //spawn only MAXBOLDERS
+            for(var i = 0; i < MAXBOULDERS; i++) {
                 me.spawnBolders(me.paperboulders300, me.boulderCollisionGroup, me.allCollisionGroups, 500, 50);
-            });
+            };
 
-            me.paperboulders80.forEach(function (child) {
+            //spawn only MAXBOLDERS (1000 boulder are for splitting the big ones)
+            for(var i = 0; i < MAXBOULDERS; i++) {
                 me.spawnBolders(me.paperboulders80, me.boulderCollisionGroup, me.allCollisionGroups, 50, 5);
-
-            });
+            };
 
             // Enable collision callbacks
             this.game.physics.p2.setImpactEvents(true);
@@ -239,22 +240,22 @@
             var me = this;
 
             if (rotLeftKey.isDown) {
-                me.ship.body.thrustLeft(200);
+                me.ship.body.thrustLeft(2000);
                 me.ship.emitterLeft.emitParticle();
             }
             else if (rotRightKey.isDown) {
-                me.ship.body.thrustRight(200);
+                me.ship.body.thrustRight(2000);
                 me.ship.emitterRight.emitParticle();
             }
            
             me.ship.body.rotation = me.game.physics.arcade.angleToPointer(me.ship) + Math.PI/2;
             if (upKey.isDown) {
-                me.ship.body.thrust(400);
+                me.ship.body.thrust(4000);
                 me.ship.emitterForward.emitParticle();
    
             }
             else if (downKey.isDown) {
-                me.ship.body.reverse(100);
+                me.ship.body.reverse(1000);
                 me.ship.emitterBack1.emitParticle();
                 me.ship.emitterBack2.emitParticle();
             } 
@@ -312,15 +313,49 @@
         },
 
 
-        spawnBolders: function (boulders, collisionGroup, groupstoCollide, mass, health) {
+        /** @description erstell einen Boulder an Position xy mit zufälliger vx vy und rotation
+          * @param {object} boulders NAme der Spritegruppe.  
+          * @param {object} collisionGroup Objects Collision Group
+          * @param {array} collisionGroups Array mit Collisiongroups
+          * @param {integer} mass Masse
+          * @param {integer} health  Health
+          * @param {integer} x position x
+          * @param {integer} y position y
+          * @return {object} Boulder  
+          */
+        spawnBolder: function (boulders, collisionGroup, collisionGroups, mass, health, x, y) {
 
             // Spawn new object
-            var object = this.spawnObject(boulders, collisionGroup, groupstoCollide);
+            var object = this.spawnObject(boulders, collisionGroup, collisionGroups);
             // Set object's position and velocity
-            object.reset()
+            object.reset(x, y);
+            object.body.velocity.x = this.random.integerInRange(-500, 500);
+            object.body.velocity.y = this.random.integerInRange(-500, 500);
+            object.body.mass = mass;
+            object.health = health;
+
+            return object;
+            
+        },
+
+
+        /** @description erstell einen Boulder an zufälliger Position mit zufälliger vx vy und rotation
+          * @param {object} boulders NAme der Spritegruppe.  
+          * @param {object} collisionGroup Objects Collision Group
+          * @param {array} collisionGroups Array mit Collisiongroups
+          * @param {integer} mass Masse
+          * @param {integer} health  Health
+          * @return {object} Boulder  
+          */
+        spawnBolders: function (boulders, collisionGroup, collisionGroups, mass, health) {
+
+            // Spawn new object
+            var object = this.spawnObject(boulders, collisionGroup, collisionGroups);
+            // Set object's position and velocity
             object.reset(this.random.integerInRange(0, WORLDSIZEX), this.random.integerInRange(0, WORLDSIZEY));
             object.body.velocity.x = this.random.integerInRange(-50, 50);
             object.body.velocity.y = this.random.integerInRange(-50, 50);
+            object.body.rotation = this.random.integerInRange(0, 2);
             object.body.mass = mass;
             object.health = health;
 
@@ -346,6 +381,12 @@
                 this.hitsound.play();
                 if (object1.sprite.health <= 0)
                     {
+                        if(object1.sprite.key === "PaperBoulder300") {
+                            this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 50, object1.x+100, object1.y+100);
+                            this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 50, object1.x-100, object1.y+100);
+                            this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 50, object1.x-100, object1.y-100);
+                            this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 50, object1.x+100, object1.y-100);
+                        }
                         object1.sprite.alive = false;
                         object1.sprite.kill();
                         this.explosion.play();
