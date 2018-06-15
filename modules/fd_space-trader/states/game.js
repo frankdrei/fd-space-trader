@@ -22,9 +22,9 @@
     var UNIVERSEX = 10000;
     var UNIVERSEY = 10000;
     var MAXSYSTEMS = 2000;
-    var WORLDSIZEX = 20000;
-    var WORLDSIZEY = 20000;
-    var MAXBOULDERS = 100;
+    var WORLDSIZEX = 2000;
+    var WORLDSIZEY = 2000;
+    var MAXBOULDERS = 5;
     var MAXBULLETS = 100;
     var BULLETLIFESPAN = 6000;
     var firetimer = 0;
@@ -96,7 +96,8 @@
             me.bulletCollisionGroup = me.game.physics.p2.createCollisionGroup();
 
             me.allCollisionGroups = [me.shipCollisionGroup, me.bulletCollisionGroup, me.boulderCollisionGroup, me.lootCollisionGroup];
-
+            me.bulletCollisionGroups = [me.bulletCollisionGroup, me.boulderCollisionGroup, me.lootCollisionGroup];
+           
 
             // Create a bunch of boulders
             me.paperboulders300 = this.createObjects("PaperBoulder300", MAXBOULDERS + 1000, 150);
@@ -143,9 +144,11 @@
             objects.physicsBodyType = Phaser.Physics.P2JS;
 
             objects.createMultiple(ammount, objectName);
-
+            var i = 0;
             objects.forEach(function (child) {
                 child.health = health;
+                child.id = i;
+                i++;
                 child.body.clearShapes();
                 child.body.loadPolygon('sprite_physics', objectName);
             }, this);
@@ -262,7 +265,7 @@
 
             if (me.game.input.activePointer.leftButton.isDown ) {
                 if (me.game.time.now > firetimer) {
-                    me.fireBullet(1,1);
+                    me.fireBullet(me.bullets, me.bulletCollisionGroup, me.bulletCollisionGroups, 1, 1);
                     me.blaster.play();
                 }
             }
@@ -293,9 +296,9 @@
         },
 
 
-        fireBullet: function (mass, health) {
+        fireBullet: function (bullets, collisionGroup, collisionGroups, mass, health) {
 
-            var object = this.spawnObject(this.bullets, this.bulletCollisionGroup, this.boulderCollisionGroup);
+            var object = this.spawnObject(bullets, collisionGroup, collisionGroups);
             object.autoCull = true;
             object.outOfCameraBoundsKill = true;
             object.body.dampening = 0;
@@ -323,14 +326,14 @@
           * @param {integer} y position y
           * @return {object} Boulder  
           */
-        spawnBolder: function (boulders, collisionGroup, collisionGroups, mass, health, x, y) {
+        spawnBolder: function (boulders, collisionGroup, collisionGroups, mass, health, x, y, angle) {
 
             // Spawn new object
             var object = this.spawnObject(boulders, collisionGroup, collisionGroups);
             // Set object's position and velocity
             object.reset(x, y);
-            object.body.velocity.x = this.random.integerInRange(-500, 500);
-            object.body.velocity.y = this.random.integerInRange(-500, 500);
+            object.body.velocity.x = Math.sin(angle) * this.random.integerInRange(10, 150);
+            object.body.velocity.y = Math.cos(angle) * this.random.integerInRange(10, 150);
             object.body.mass = mass;
             object.health = health;
 
@@ -372,27 +375,25 @@
             return object;
         },
 
-
         hit: function (object1, object2) {
-            
-            if (object2.sprite.key === 'Bullet') {
-                object2.sprite.lifespan = 100;
-                object1.sprite.health -= 1;
+            if (object1.sprite.key === "Bullet" && object1.sprite.alive === true) {
+                object1.sprite.lifespan = 100;
+                object1.sprite.alive = false;
+                // console.log(object1.sprite.key + " - " + object2.sprite.key);
+                // console.log(object1.id + " - " + object2.id);
+                object2.sprite.health -= 1;
                 this.hitsound.play();
-                if (object1.sprite.health <= 0)
-                    {
-                        if(object1.sprite.key === "PaperBoulder300") {
-                            this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 50, object1.x+100, object1.y+100);
-                            this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 50, object1.x-100, object1.y+100);
-                            this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 50, object1.x-100, object1.y-100);
-                            this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 50, object1.x+100, object1.y-100);
-                        }
-                        object1.sprite.alive = false;
-                        object1.sprite.kill();
-                        this.explosion.play();
+                if (object2.sprite.health <= 0) {
+                    if(object2.sprite.key === "PaperBoulder300"){
+                        this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 5, object1.x+32, object1.y+32, this.random.integerInRange(0, Math.PI));
+                        this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 5, object1.x+32, object1.y-32, this.random.integerInRange(0, Math.PI));
+                        this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 5, object1.x-32, object1.y-32, this.random.integerInRange(0, Math.PI));
+                        this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 5, object1.x-32, object1.y+32, this.random.integerInRange(0, Math.PI));
                     }
+                    object2.sprite.kill();
+                    this.explosion.play();
+                }
             }
-            
         },
 
 
