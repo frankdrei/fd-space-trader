@@ -9,23 +9,26 @@
     var background2;
     var background3;
     var background4;
+    var healthbar;
     var moon1;
     var boulders;
     var boulders128;
     var paperboulders300;
     var bullets;
     var ship;
+    var shiplife;
     var emitter;
     var cursors;
     var allCollisionGroups = [];
     var universe = [];
     var UNIVERSEX = 10000;
     var UNIVERSEY = 10000;
-    var MAXSYSTEMS = 2000;
-    var WORLDSIZEX = 2000;
-    var WORLDSIZEY = 2000;
-    var MAXBOULDERS = 5;
+    var MAXSYSTEMS = 1000;
+    var WORLDSIZEX = 50000;
+    var WORLDSIZEY = 50000;
+    var MAXBOULDERS = 100;
     var MAXBULLETS = 100;
+    var MAXSHIPLIFE = 2000;
     var BULLETLIFESPAN = 6000;
     var firetimer = 0;
     var FIRERATE = 100;
@@ -45,7 +48,6 @@
             // Create a random generator
             var seed = Date.now();
             this.random = new Phaser.RandomDataGenerator([seed]);
-
 
             me.game.time.advancedTiming = true;
 
@@ -110,7 +112,14 @@
             me.loot = me.createObjects("Barren64", 50, 1);
 
             // Create Ship
-            me.ship = me.createShip("Ship1", me.shipCollisionGroup, me.allCollisionGroups, 10, 2000);
+            me.ship = me.createShip("Ship1", me.shipCollisionGroup, me.allCollisionGroups, 10, MAXSHIPLIFE);
+            // Livebar für Schiff
+
+            me.ship.healthbar = new me.createBar(me.game);
+            
+            me.ship.healthbar.defaultConfig.animationDuration = 500;
+
+
 
             // This is required so that the groups will collide with the world bounds
             this.game.physics.p2.updateBoundsCollisionGroup();
@@ -125,11 +134,70 @@
                 me.spawnBolders(me.paperboulders80, me.boulderCollisionGroup, me.allCollisionGroups, 50, 5);
             };
 
+
+
             // Enable collision callbacks
             this.game.physics.p2.setImpactEvents(true);
 
         },
-
+        /** @description erstelle eine Statusbar die prozentual einen Wert darstellt
+          * @param {integer} x Position x
+          * @param {integer} y Position y
+          * @param {integer} width Breite 100%
+          * @param {integer} height Höhe
+          * @param {object} game Das Gameobject
+          * @return {object} object  
+          */
+        createBar: function (game) {
+            var object = {}
+            object.game = game;
+            object.defaultConfig = {
+                width: 300,
+                height: 40,
+                x: 0,
+                y: 0,
+                bg: {
+                    color: '#000028'
+                },
+                bar: {
+                    color: '#FEFF03'
+                },
+                animationDuration: 200,
+                flipped: false,
+                isFixedToCamera: true
+            };
+            
+            object.bmd = object.game.add.bitmapData(object.defaultConfig.width, object.defaultConfig.height);
+            object.bmd.ctx.fillStyle = object.defaultConfig.bg.color;
+            object.bmd.ctx.beginPath();
+            object.bmd.ctx.rect(0, 0, object.defaultConfig.width, object.defaultConfig.height);
+            object.bmd.ctx.fill();
+            object.bmd.update();
+            object.bgSprite = object.game.add.sprite(object.game.width / 2,object.game.height - 100, object.bmd);
+            object.bgSprite.anchor.set(0.5);
+            object.bgSprite.fixedToCamera = object.defaultConfig.isFixedToCamera;
+            
+            object.bmd = object.game.add.bitmapData(object.defaultConfig.width, object.defaultConfig.height);
+            object.bmd.ctx.fillStyle = object.defaultConfig.bar.color;
+            object.bmd.ctx.beginPath();
+            object.bmd.ctx.rect(0, 0, object.defaultConfig.width, object.defaultConfig.height);
+            object.bmd.ctx.fill();
+            object.bmd.update();
+            object.fgSprite = object.game.add.sprite(object.game.width / 2 - object.bgSprite.width / 2, object.game.height - 100 , object.bmd);
+            object.fgSprite.anchor.y = 0.5;
+            object.fgSprite.fixedToCamera = object.defaultConfig.isFixedToCamera;
+           
+            object.setPercent = function (newValue){
+                if(newValue < 0) newValue = 0;
+                if(newValue > 100) newValue = 100;
+                var newWidth =  (newValue * this.defaultConfig.width) / 100;
+                object.game.add.tween(object.fgSprite).to( { width: newWidth }, object.defaultConfig.animationDuration, Phaser.Easing.Linear.None, true);
+                
+                
+            };
+            
+            return object;
+        },
 
         /** @description erstelle Sprite Objecte mit P2 Body
           * @param {string} objectName Name der Textur und des Physics Shapes
@@ -400,6 +468,7 @@
         shiphit: function (object1, object2) {
 
             object1.sprite.health -= object2.mass;
+            object1.sprite.healthbar.setPercent(object1.sprite.health/MAXSHIPLIFE*100)
             object2.sprite.health -= object1.mass;
             this.hitsound.play();
             if (object2.sprite.health <= 0) {
