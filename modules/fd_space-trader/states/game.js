@@ -1,6 +1,8 @@
 ﻿define([
-    "Phaser"
-], function (Phaser) {
+    "Phaser", 
+    "units/ship",
+
+], function (Phaser, Ship) {
 
     var explosion;
     var blaster;
@@ -24,8 +26,8 @@
     var UNIVERSEX = 10000;
     var UNIVERSEY = 10000;
     var MAXSYSTEMS = 1000;
-    var WORLDSIZEX = 50000;
-    var WORLDSIZEY = 50000;
+    var WORLDSIZEX = 10000;
+    var WORLDSIZEY = 10000;
     var MAXBOULDERS = 100;
     var MAXBULLETS = 100;
     var MAXSHIPLIFE = 2000;
@@ -112,13 +114,9 @@
             me.loot = me.createObjects("Barren64", 50, 1);
 
             // Create Ship
-            me.ship = me.createShip("Ship1", me.shipCollisionGroup, me.allCollisionGroups, 10, MAXSHIPLIFE);
-            // Livebar für Schiff
-
-            me.ship.healthbar = new me.createBar(me.game);
-            
-            me.ship.healthbar.defaultConfig.animationDuration = 500;
-
+            me.ship = new Ship("Ship1", me.shipCollisionGroup, 10, MAXSHIPLIFE, me.game);
+            me.game.add.existing(me.ship);
+            me.ship.body.collides(me.allCollisionGroups, this.shiphit, this);
 
 
             // This is required so that the groups will collide with the world bounds
@@ -140,64 +138,7 @@
             this.game.physics.p2.setImpactEvents(true);
 
         },
-        /** @description erstelle eine Statusbar die prozentual einen Wert darstellt
-          * @param {integer} x Position x
-          * @param {integer} y Position y
-          * @param {integer} width Breite 100%
-          * @param {integer} height Höhe
-          * @param {object} game Das Gameobject
-          * @return {object} object  
-          */
-        createBar: function (game) {
-            var object = {}
-            object.game = game;
-            object.defaultConfig = {
-                width: 300,
-                height: 40,
-                x: 0,
-                y: 0,
-                bg: {
-                    color: '#000028'
-                },
-                bar: {
-                    color: '#FEFF03'
-                },
-                animationDuration: 200,
-                flipped: false,
-                isFixedToCamera: true
-            };
-            
-            object.bmd = object.game.add.bitmapData(object.defaultConfig.width, object.defaultConfig.height);
-            object.bmd.ctx.fillStyle = object.defaultConfig.bg.color;
-            object.bmd.ctx.beginPath();
-            object.bmd.ctx.rect(0, 0, object.defaultConfig.width, object.defaultConfig.height);
-            object.bmd.ctx.fill();
-            object.bmd.update();
-            object.bgSprite = object.game.add.sprite(object.game.width / 2,object.game.height - 100, object.bmd);
-            object.bgSprite.anchor.set(0.5);
-            object.bgSprite.fixedToCamera = object.defaultConfig.isFixedToCamera;
-            
-            object.bmd = object.game.add.bitmapData(object.defaultConfig.width, object.defaultConfig.height);
-            object.bmd.ctx.fillStyle = object.defaultConfig.bar.color;
-            object.bmd.ctx.beginPath();
-            object.bmd.ctx.rect(0, 0, object.defaultConfig.width, object.defaultConfig.height);
-            object.bmd.ctx.fill();
-            object.bmd.update();
-            object.fgSprite = object.game.add.sprite(object.game.width / 2 - object.bgSprite.width / 2, object.game.height - 100 , object.bmd);
-            object.fgSprite.anchor.y = 0.5;
-            object.fgSprite.fixedToCamera = object.defaultConfig.isFixedToCamera;
-           
-            object.setPercent = function (newValue){
-                if(newValue < 0) newValue = 0;
-                if(newValue > 100) newValue = 100;
-                var newWidth =  (newValue * this.defaultConfig.width) / 100;
-                object.game.add.tween(object.fgSprite).to( { width: newWidth }, object.defaultConfig.animationDuration, Phaser.Easing.Linear.None, true);
-                
-                
-            };
-            
-            return object;
-        },
+ 
 
         /** @description erstelle Sprite Objecte mit P2 Body
           * @param {string} objectName Name der Textur und des Physics Shapes
@@ -226,54 +167,7 @@
         },
 
 
-        /** @description erstell ein Schiff
-          * @param {string} objectName Name der Textur.  
-          * @param {object} collisionGroup Objects Collision Group
-          * @param {array} collisionGroups Array mit Collisiongroups
-          * @param {integer} health  Health
-          * @param {integer} mass Masse
-          * @return {object} Schiffsobject  
-          */
-        createShip: function (objectName, collisionGroup, collisionGroups, mass, health) {
-            // TODO evtl ein komplettes Object für die Shiffe übergeben incl aller Parameter
-
-            // Add the player to the game
-            var object = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, objectName);
-
-            // Add Health to Ship
-            object.health = health;
-
-            // Enable physics, use "true" to enable debug drawing
-            this.game.physics.p2.enable([object], false);
-
-            // Get rid of current bounding box
-            object.body.clearShapes();
-
-            // Add our PhysicsEditor bounding shape
-            object.body.loadPolygon("sprite_physics", objectName);
-
-            // Define the players collision group and make it collide with the block and fruits
-            object.body.setCollisionGroup(collisionGroup);
-
-            object.body.collides(collisionGroups, this.shiphit, this);
-            this.game.camera.follow(object);
-
-            object.body.mass = mass;
-
-            this.game.physics.p2.enable(object);
-
-
-            object.emitterForward = this.createEmitter(500, "White", 0, 42, object, 300, 1, 0, 0.2, 0.2, new Phaser.Point(0,5), new Phaser.Point(0,100));
-            object.emitterBack1 = this.createEmitter(500, "White", 22, 15, object, 300, 1, 0, 0.08, 0.08, new Phaser.Point(0,-5), new Phaser.Point(0,-70));
-            object.emitterBack2 = this.createEmitter(500, "White", -22, 15, object, 300, 1, 0, 0.08, 0.08, new Phaser.Point(0, -5), new Phaser.Point(0, -70));
-            object.emitterLeft = this.createEmitter(500, "White", 22, 10, object, 200, 1, 0, 0.08, 0.08, new Phaser.Point(5, 0), new Phaser.Point(100, 0));
-            object.emitterRight = this.createEmitter(500, "White", -22, 10, object, 200, 1, 0, 0.08, 0.08, new Phaser.Point(-5, 0), new Phaser.Point(-100, 0));
-            
-            return object;
-        },
-
-
-        /** @description erstell einen emitter
+         /** @description erstell einen emitter
          * @param {integer} ammount Anzahl Partikel 
          * @param {string} objectName Name der Textur.  
          * @param {integer} offsetX Offset X von Parent
@@ -468,7 +362,7 @@
         shiphit: function (object1, object2) {
 
             object1.sprite.health -= object2.mass;
-            object1.sprite.healthbar.setPercent(object1.sprite.health/MAXSHIPLIFE*100)
+            object1.sprite.healthbar.setPercent(object1.sprite.health/MAXSHIPLIFE*100, this.game);
             object2.sprite.health -= object1.mass;
             this.hitsound.play();
             if (object2.sprite.health <= 0) {
