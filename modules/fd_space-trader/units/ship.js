@@ -1,6 +1,10 @@
+// TODO verschiedene Schiffstypen mir unterschiedlichen Parametern und Shapes
+// TODO Schiffe aus einzelkomponenten, die Zerfallen / zerstört werden können
+// TODO eventuell Schiffe auf Stations selbst designen aus Baukastenteilen
 define([
     "Phaser",
     "units/statusbar"
+
 ], function(Phaser, Statusbar){
     var Ship = function(objectName, collisionGroup, mass, health, game){
 

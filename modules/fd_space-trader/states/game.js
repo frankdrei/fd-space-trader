@@ -4,30 +4,16 @@
 
 ], function (Phaser, Ship) {
 
-    var explosion;
-    var blaster;
-    var hitsound;
     var background1;
     var background2;
     var background3;
     var background4;
-    var healthbar;
-    var moon1;
-    var boulders;
-    var boulders128;
-    var paperboulders300;
-    var bullets;
-    var ship;
-    var shiplife;
-    var emitter;
-    var cursors;
-    var allCollisionGroups = [];
     var universe = [];
     var UNIVERSEX = 10000;
     var UNIVERSEY = 10000;
     var MAXSYSTEMS = 1000;
-    var WORLDSIZEX = 10000;
-    var WORLDSIZEY = 10000;
+    var WORLDSIZEX = 50000;
+    var WORLDSIZEY = 50000;
     var MAXBOULDERS = 100;
     var MAXBULLETS = 100;
     var MAXSHIPLIFE = 2000;
@@ -117,7 +103,6 @@
             me.ship = new Ship("Ship1", me.shipCollisionGroup, 10, MAXSHIPLIFE, me.game);
             me.game.add.existing(me.ship);
             me.ship.body.collides(me.allCollisionGroups, this.shiphit, this);
-
 
             // This is required so that the groups will collide with the world bounds
             this.game.physics.p2.updateBoundsCollisionGroup();

@@ -1,3 +1,4 @@
+// TODO merere Statusbars für "Shield", "Cargo", "Thrust forward und backward" ...
 define([
     "Phaser"
 ], function(Phaser){
