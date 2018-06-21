@@ -12,8 +12,8 @@
     var UNIVERSEX = 10000;
     var UNIVERSEY = 10000;
     var MAXSYSTEMS = 1000;
-    var WORLDSIZEX = 50000;
-    var WORLDSIZEY = 50000;
+    var WORLDSIZEX = 20000;
+    var WORLDSIZEY = 20000;
     var MAXBOULDERS = 100;
     var MAXBULLETS = 100;
     var MAXSHIPLIFE = 2000;
@@ -21,7 +21,7 @@
     var firetimer = 0;
     var FIRERATE = 100;
 
-    var upKey, downKey, rotLeftKey, rotRightKey, panLeftKey, panRightKey, fireKey, shieldKey;
+    var upKey, downKey, rotLeftKey, rotRightKey, panLeftKey, interactKey, fireKey, shieldKey;
 
     var GameState = function (game) {
 
@@ -73,7 +73,7 @@
             downKey = me.game.input.keyboard.addKey(Phaser.Keyboard.S);
             rotRightKey = me.game.input.keyboard.addKey(Phaser.Keyboard.D);
             rotLeftKey = me.game.input.keyboard.addKey(Phaser.Keyboard.A);
-            panRightKey = me.game.input.keyboard.addKey(Phaser.Keyboard.E);
+            interactKey = me.game.input.keyboard.addKey(Phaser.Keyboard.E);
             panLeftKey = me.game.input.keyboard.addKey(Phaser.Keyboard.Q);
             fireKey = me.game.input.keyboard.addKey(Phaser.Keyboard.Y);
             shieldKey = me.game.input.keyboard.addKey(Phaser.Keyboard.STRGLEFT);
@@ -87,7 +87,7 @@
 
             me.allCollisionGroups = [me.shipCollisionGroup, me.bulletCollisionGroup, me.boulderCollisionGroup, me.lootCollisionGroup];
             me.bulletCollisionGroups = [me.bulletCollisionGroup, me.boulderCollisionGroup, me.lootCollisionGroup];
-           
+            me.lootCollisionGroups = [me.bulletCollisionGroup, me.boulderCollisionGroup, me.shipCollisionGroup];
 
             // Create a bunch of boulders
             me.paperboulders300 = this.createObjects("PaperBoulder300", MAXBOULDERS + 1000, 150);
@@ -120,7 +120,9 @@
 
 
             // Enable collision callbacks
+            this.game.physics.p2.setPostBroadphaseCallback(this.checkOverlap, this);
             this.game.physics.p2.setImpactEvents(true);
+            // this.game.physics.p2.setPostBroadphaseCallback(me.checkOverlap, this);   //this is used to start the check
 
         },
  
@@ -188,7 +190,11 @@
 
         update: function () {
             var me = this;
-
+            if (interactKey.isDown && me.ship.grabLoot) {
+                me.ship.lootGrabbed = true;
+            } else {
+                me.ship.lootGrabbed = false;
+            }
             if (rotLeftKey.isDown) {
                 me.ship.body.thrustLeft(2000);
                 me.ship.emitterLeft.emitParticle();
@@ -200,37 +206,54 @@
            
             me.ship.body.rotation = me.game.physics.arcade.angleToPointer(me.ship) + Math.PI/2;
             if (upKey.isDown) {
-                me.ship.body.thrust(4000);
-                me.ship.emitterForward.emitParticle();
-   
+                if(me.ship.thrustPreset >= me.ship.MAXTHRUST){
+                    me.ship.thrustPreset = me.ship.MAXTHRUST
+                } else {
+                    me.ship.thrustPreset +=20;
+                    me.ship.thrustbar.setPercent(me.ship.thrustPreset/me.ship.MAXTHRUST*100, this.game);
+                }
+                
             }
             else if (downKey.isDown) {
+                if(me.ship.thrustPreset <= 0 ){
+                    me.ship.thrustPreset = 0
+                } else {
+                    me.ship.thrustPreset -=40;
+                    me.ship.thrustbar.setPercent(me.ship.thrustPreset/me.ship.MAXTHRUST*100, this.game);
+                }                
                 me.ship.body.reverse(1000);
                 me.ship.emitterBack1.emitParticle();
                 me.ship.emitterBack2.emitParticle();
             } 
-
+            
             if (me.game.input.activePointer.leftButton.isDown ) {
                 if (me.game.time.now > firetimer) {
                     me.fireBullet(me.bullets, me.bulletCollisionGroup, me.bulletCollisionGroups, 1, 1);
                     me.blaster.play();
                 }
             }
-
+            
             if (!this.game.camera.atLimit.x) {
                 background1.tilePosition.x -= me.ship.body.velocity.x * me.game.time.physicsElapsed/5;
                 background2.tilePosition.x -= me.ship.body.velocity.x * me.game.time.physicsElapsed/3;
                 background3.tilePosition.x -= me.ship.body.velocity.x * me.game.time.physicsElapsed/2;
                 background4.tilePosition.x -= me.ship.body.velocity.x * me.game.time.physicsElapsed;
             }
-
+            
             if (!this.game.camera.atLimit.y) {
                 background1.tilePosition.y -= me.ship.body.velocity.y * me.game.time.physicsElapsed/5;
                 background2.tilePosition.y -= me.ship.body.velocity.y * me.game.time.physicsElapsed/3;
                 background3.tilePosition.y -= me.ship.body.velocity.y * me.game.time.physicsElapsed/2;
                 background4.tilePosition.y -= me.ship.body.velocity.y * me.game.time.physicsElapsed;
             }
-
+            
+            me.ship.body.thrust(me.ship.thrustPreset);
+            me.ship.emitterForward.minParticleSpeed = new Phaser.Point(0,me.ship.thrustPreset/1000);
+            me.ship.emitterForward.maxParticleSpeed = new Phaser.Point(0,me.ship.thrustPreset/30);
+            if(me.ship.thrustPreset >> 0){
+                me.ship.emitterForward.emitParticle();
+            }
+            
             me.game.debug.text(me.game.time.fps, 2, 10, "#00ff00");
             me.game.debug.text("pos: " + Math.floor(me.ship.position.x) + " / " + Math.floor(me.ship.position.y), 2, 20, "#00ff00");
             var shipspeed = Math.sqrt(Math.pow(this.ship.body.velocity.x, 2) + Math.pow(this.ship.body.velocity.x, 2));
@@ -262,6 +285,35 @@
 
         },
 
+
+        /** @description erstell einen Boulder an Position xy mit zufälliger vx vy und rotation
+          * @param {object} boulders NAme der Spritegruppe.  
+          * @param {object} collisionGroup Objects Collision Group
+          * @param {array} collisionGroups Array mit Collisiongroups
+          * @param {integer} mass Masse
+          * @param {integer} health  Health
+          * @param {integer} x position x
+          * @param {integer} y position y
+          * @return {object} Boulder  
+          */
+         spawnLoot: function (loottype, lootammount, loots, collisionGroup, collisionGroups, mass, health, x, y, angle) {
+
+            // Spawn new object
+            var object = this.spawnObject(loots, collisionGroup, collisionGroups);
+            // Set object's position and velocity
+            object.reset(x, y);
+            object.body.damping = 0;
+            object.body.angularDamping  = 0;
+            object.body.velocity.x = Math.sin(angle) * this.random.integerInRange(10, 150);
+            object.body.velocity.y = Math.cos(angle) * this.random.integerInRange(10, 150);
+            object.body.mass = mass;
+            object.health = health;
+            object.type = loottype; 
+            object.ammount = lootammount;
+
+            return object;
+            
+        },
 
         /** @description erstell einen Boulder an Position xy mit zufälliger vx vy und rotation
           * @param {object} boulders NAme der Spritegruppe.  
@@ -332,10 +384,22 @@
                 this.hitsound.play();
                 if (object2.sprite.health <= 0) {
                     if(object2.sprite.key === "PaperBoulder300"){
+                        // Großer Bouilder zerfällt in 4 kleinere
+                        // random loot spawns
                         this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 5, object1.x+32, object1.y+32, this.random.integerInRange(0, Math.PI));
                         this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 5, object1.x+32, object1.y-32, this.random.integerInRange(0, Math.PI));
                         this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 5, object1.x-32, object1.y-32, this.random.integerInRange(0, Math.PI));
                         this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 5, object1.x-32, object1.y+32, this.random.integerInRange(0, Math.PI));
+                        for(var i = 0; i < 5; i++) {
+                            var chance = this.random.integerInRange(0, 1); //Chanche 1 / 5
+                            console.log(chance);
+                            var loottype = this.random.integerInRange(0, 2);
+                            var lootammount = this.random.integerInRange(10, 100);
+                            if(chance === 0){
+                                this.spawnLoot(loottype, lootammount, this.loot, this.lootCollisionGroup, this.lootCollisionGroups, lootammount, 5, object1.x, object1.y, this.random.integerInRange(0, Math.PI));
+                            }
+                        }
+
                     }
                     object2.sprite.kill();
                     this.explosion.play();
@@ -345,6 +409,10 @@
 
 
         shiphit: function (object1, object2) {
+            if(object1.sprite.key === "Ship1" && object2.sprite.key === "Barren64" || object1.sprite.key === "Barren64" && object2.sprite.key === "Ship1") {
+                console.log(object1.sprite.key + " - Ship");
+                console.log(object2.sprite.key + " - Ship");
+            }
 
             object1.sprite.health -= object2.mass;
             object1.sprite.healthbar.setPercent(object1.sprite.health/MAXSHIPLIFE*100, this.game);
@@ -359,6 +427,48 @@
                 this.game.state.start("GameOver");
             }
             
+        },
+
+
+        checkOverlap: function (object1, object2) {
+
+            if(object1.sprite.key === "Ship1" && object2.sprite.key === "Barren64" || object2.sprite.key === "Ship1" && object1.sprite.key === "Barren64") {
+
+                console.log("x" + Math.abs(object1.velocity.x - object2.velocity.x).toString());
+                console.log("y" + Math.abs(object1.velocity.y - object2.velocity.y).toString());
+
+                var shipobject;
+                var lootobject;
+                if(object1.sprite.key === "Ship1"){
+                    shipobject = object1;
+                    lootobject = object2;
+                } else {
+                    shipobject = object2;
+                    lootobject = object1;
+                }
+                console.log(shipobject);
+                console.log(lootobject);
+                if(Math.abs(shipobject.velocity.x - lootobject.velocity.x) <=200 && Math.abs(shipobject.velocity.y - lootobject.velocity.y) <=200){
+
+                    shipobject.sprite.grabLoot = true;
+
+                    if(shipobject.sprite.lootGrabbed){
+                        if(shipobject.sprite.cargoSpace + lootobject.sprite.ammount <= shipobject.sprite.MAXCARGOSPACE){
+                            shipobject.sprite.cargoSpace += lootobject.sprite.ammount;
+                            shipobject.sprite.cargobar.setPercent(shipobject.sprite.cargoSpace/shipobject.sprite.MAXCARGOSPACE*100, this.game);
+                            shipobject.sprite.cargoObjets.push(object2);
+                            console.log(shipobject);
+                            lootobject.sprite.kill();
+                            shipobject.sprite.lootGrabbed = false;
+                        }
+                    }
+                    return false;
+                }
+                shipobject.sprite.grabLoot = false;
+                console.log(shipobject.velocity);
+                console.log(lootobject.velocity);
+            }
+            return true;
         }
 
 
