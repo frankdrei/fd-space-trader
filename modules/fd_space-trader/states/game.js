@@ -378,8 +378,6 @@
             if (object1.sprite.key === "Bullet" && object1.sprite.alive === true) {
                 object1.sprite.lifespan = 100;
                 object1.sprite.alive = false;
-                // console.log(object1.sprite.key + " - " + object2.sprite.key);
-                // console.log(object1.id + " - " + object2.id);
                 object2.sprite.health -= 1;
                 this.hitsound.play();
                 if (object2.sprite.health <= 0) {
@@ -392,8 +390,18 @@
                         this.spawnBolder(this.paperboulders80, this.boulderCollisionGroup, this.allCollisionGroups, 50, 5, object1.x-32, object1.y+32, this.random.integerInRange(0, Math.PI));
                         for(var i = 0; i < 5; i++) {
                             var chance = this.random.integerInRange(0, 1); //Chanche 1 / 5
-                            console.log(chance);
-                            var loottype = this.random.integerInRange(0, 2);
+                            var tmpnum = this.random.integerInRange(0, 2);
+                            switch(tmpnum){
+                                case 0:
+                                loottype = "Stein";
+                                break;
+                                case 1:
+                                loottype = "Metall";
+                                break;
+                                case 2:
+                                loottype = "Gold";
+                                break;
+                            }
                             var lootammount = this.random.integerInRange(10, 100);
                             if(chance === 0){
                                 this.spawnLoot(loottype, lootammount, this.loot, this.lootCollisionGroup, this.lootCollisionGroups, lootammount, 5, object1.x, object1.y, this.random.integerInRange(0, Math.PI));
@@ -401,6 +409,18 @@
                         }
 
                     }
+
+                    this.explosionEmitter(object1.x, object1.y);
+                    // var tmpemitter = this.game.add.emitter(object1.x, object1.y, 100);
+                    // tmpemitter.makeParticles("White");
+                    // tmpemitter.gravity = 0;
+                    // tmpemitter.minParticleScale = 0.01;
+                    // tmpemitter.maxParticleScale = 0.5;
+                    
+                    // tmpemitter.setAlpha(1, 0, 2000, Phaser.Easing.Quintic.Out);
+                    
+                    // tmpemitter.start(true,2000, null, 100);
+                    
                     object2.sprite.kill();
                     this.explosion.play();
                 }
@@ -419,6 +439,7 @@
             object2.sprite.health -= object1.mass;
             this.hitsound.play();
             if (object2.sprite.health <= 0) {
+                this.explosionEmitter(object2.x, object2.y);
                 object2.sprite.kill();
                 this.explosion.play();
             }
@@ -434,9 +455,6 @@
 
             if(object1.sprite.key === "Ship1" && object2.sprite.key === "Barren64" || object2.sprite.key === "Ship1" && object1.sprite.key === "Barren64") {
 
-                console.log("x" + Math.abs(object1.velocity.x - object2.velocity.x).toString());
-                console.log("y" + Math.abs(object1.velocity.y - object2.velocity.y).toString());
-
                 var shipobject;
                 var lootobject;
                 if(object1.sprite.key === "Ship1"){
@@ -446,8 +464,6 @@
                     shipobject = object2;
                     lootobject = object1;
                 }
-                console.log(shipobject);
-                console.log(lootobject);
                 if(Math.abs(shipobject.velocity.x - lootobject.velocity.x) <=200 && Math.abs(shipobject.velocity.y - lootobject.velocity.y) <=200){
 
                     shipobject.sprite.grabLoot = true;
@@ -457,18 +473,29 @@
                             shipobject.sprite.cargoSpace += lootobject.sprite.ammount;
                             shipobject.sprite.cargobar.setPercent(shipobject.sprite.cargoSpace/shipobject.sprite.MAXCARGOSPACE*100, this.game);
                             shipobject.sprite.cargoObjets.push(object2);
-                            console.log(shipobject);
                             lootobject.sprite.kill();
                             shipobject.sprite.lootGrabbed = false;
+                            console.log(shipobject);
                         }
                     }
                     return false;
                 }
                 shipobject.sprite.grabLoot = false;
-                console.log(shipobject.velocity);
-                console.log(lootobject.velocity);
             }
             return true;
+        },
+
+        explosionEmitter: function(x, y) {
+            var tmpemitter = this.game.add.emitter(x, y, 100);
+            tmpemitter.makeParticles("White");
+            tmpemitter.gravity = 0;
+            tmpemitter.minParticleScale = 0.01;
+            tmpemitter.maxParticleScale = 0.5;
+            
+            tmpemitter.setAlpha(1, 0, 2000, Phaser.Easing.Quintic.Out);
+            
+            tmpemitter.start(true,2000, null, 100);
+
         }
 
 
