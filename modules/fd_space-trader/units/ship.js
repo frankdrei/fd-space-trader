@@ -13,9 +13,9 @@ define([
         
         
         // Add Cargo to Ship (later TODO with parametersets)
-        this.MAXCARGOSPACE = 200;
+        this.MAXCARGOSPACE = 2000;
         this.cargoSpace = 0;
-        this.cargoObjets = [];
+        this.cargoObjects = new Map();
         // Add a Flag for possible grab a Loot
         this.grabLoot = false;
         // Add an Answer if Loot is grabbed

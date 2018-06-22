@@ -8,7 +8,7 @@
     var background2;
     var background3;
     var background4;
-    var universe = [];
+    var universe = {};
     var UNIVERSEX = 10000;
     var UNIVERSEY = 10000;
     var MAXSYSTEMS = 1000;
@@ -32,11 +32,11 @@
 
         create: function () {
             var me = this;
-
+            
             // Create a random generator
             var seed = Date.now();
             this.random = new Phaser.RandomDataGenerator([seed]);
-
+            
             me.game.time.advancedTiming = true;
 
             me.game.world.setBounds(0, 0, WORLDSIZEX, WORLDSIZEY);
@@ -77,6 +77,8 @@
             panLeftKey = me.game.input.keyboard.addKey(Phaser.Keyboard.Q);
             fireKey = me.game.input.keyboard.addKey(Phaser.Keyboard.Y);
             shieldKey = me.game.input.keyboard.addKey(Phaser.Keyboard.STRGLEFT);
+            inventoryKey = me.game.input.keyboard.addKey(Phaser.Keyboard.I);
+            stopKey = me.game.input.keyboard.addKey(Phaser.Keyboard.X);
 
 
             // Create collision groups
@@ -190,6 +192,12 @@
 
         update: function () {
             var me = this;
+
+            if (inventoryKey.isDown) {
+                $('#inventory').show();
+            }
+
+
             if (interactKey.isDown && me.ship.grabLoot) {
                 me.ship.lootGrabbed = true;
             } else {
@@ -203,7 +211,7 @@
                 me.ship.body.thrustRight(2000);
                 me.ship.emitterRight.emitParticle();
             }
-           
+            
             me.ship.body.rotation = me.game.physics.arcade.angleToPointer(me.ship) + Math.PI/2;
             if (upKey.isDown) {
                 if(me.ship.thrustPreset >= me.ship.MAXTHRUST){
@@ -225,6 +233,10 @@
                 me.ship.emitterBack1.emitParticle();
                 me.ship.emitterBack2.emitParticle();
             } 
+            if (stopKey.isDown) {
+                me.ship.thrustPreset = 0;
+                me.ship.thrustbar.setPercent(me.ship.thrustPreset/me.ship.MAXTHRUST*100, this.game);
+            }
             
             if (me.game.input.activePointer.leftButton.isDown ) {
                 if (me.game.time.now > firetimer) {
@@ -411,15 +423,6 @@
                     }
 
                     this.explosionEmitter(object1.x, object1.y);
-                    // var tmpemitter = this.game.add.emitter(object1.x, object1.y, 100);
-                    // tmpemitter.makeParticles("White");
-                    // tmpemitter.gravity = 0;
-                    // tmpemitter.minParticleScale = 0.01;
-                    // tmpemitter.maxParticleScale = 0.5;
-                    
-                    // tmpemitter.setAlpha(1, 0, 2000, Phaser.Easing.Quintic.Out);
-                    
-                    // tmpemitter.start(true,2000, null, 100);
                     
                     object2.sprite.kill();
                     this.explosion.play();
@@ -455,8 +458,8 @@
 
             if(object1.sprite.key === "Ship1" && object2.sprite.key === "Barren64" || object2.sprite.key === "Ship1" && object1.sprite.key === "Barren64") {
 
-                var shipobject;
-                var lootobject;
+                var shipobject = {};
+                var lootobject = {};
                 if(object1.sprite.key === "Ship1"){
                     shipobject = object1;
                     lootobject = object2;
@@ -472,7 +475,27 @@
                         if(shipobject.sprite.cargoSpace + lootobject.sprite.ammount <= shipobject.sprite.MAXCARGOSPACE){
                             shipobject.sprite.cargoSpace += lootobject.sprite.ammount;
                             shipobject.sprite.cargobar.setPercent(shipobject.sprite.cargoSpace/shipobject.sprite.MAXCARGOSPACE*100, this.game);
-                            shipobject.sprite.cargoObjets.push(object2);
+                            if (shipobject.sprite.cargoObjects.has(lootobject.sprite.type)) {       
+                                shipobject.sprite.cargoObjects.set(lootobject.sprite.type, parseInt(shipobject.sprite.cargoObjects.get(lootobject.sprite.type), 10) + parseInt(lootobject.sprite.ammount, 10));
+                            } else {
+                                shipobject.sprite.cargoObjects.set(lootobject.sprite.type, parseInt(lootobject.sprite.ammount, 10));
+                            }
+                            
+                            $('#inventory tbody').empty();
+                            if(shipobject.sprite.cargoObjects.size > 0){
+                                for (var [key, value] of shipobject.sprite.cargoObjects) {
+                                    $('#inventory tbody').append('<tr><th scope="row">' +
+                                        key
+                                        + '</th><td>' + 
+                                        value
+                                        + '</td><td><button class="btn btn-primary">ok</button></td><td><button class="btn btn-primary">ok</button></td><td></td></tr>');
+            
+                                }   
+            
+                            }
+
+
+
                             lootobject.sprite.kill();
                             shipobject.sprite.lootGrabbed = false;
                             console.log(shipobject);
