@@ -1,0 +1,27 @@
+Space Trader
+
+Space trader ist ein Spiel das ich entwickle um in erster linie für mich Javascript mechaniken zu testen und zu lerenen.
+Ich nutze dazu die Phaser.io Engine mit, unter anderm der P2 Physik sowie Jquery und Bootstrap4
+
+Es soll ein 2D TopDown Weltraumspiel im Stil von Asteroids sein, sich aber auch der Elemente Open World, Mining, Trading und
+Missionrunning bedienen.
+
+Im Grunde ist das finale Ziel ein 2D Starcitizen zu schaffen im bereich der Mechaniken. Der Focus liegt nicht auf der Grafik.
+Die Grafik werde ich bewußt in einem Bleistifskizzen Stil halten.
+Auch der Sound ist zweitrangig.
+
+Hier nun die Dinge die ich für dieses Projkt anstrebe:
+
+.   nachezu unendlich große, persistente Welt. (bestehend aus Clustern die dynamisch, abhängig vond der Spielerposition nachgeladen werden).
+.   Es gibt keine Hyperraumsprünge im Sinne eines Teleports. Wenn ich von A nach B Reise, kann ich das Je nach Antrieb sehr schnell tun,
+    muß aber die Route sauber berechnen um Kollisionen mit Sonnen PLaneten und Monden zu vermeiden.
+.   Die Wirtschaft in form von Stationen  Outposts und Produktionsstätten soll dynamich funktionieren, Die Preise richten sich nach Angebot und 
+    Nachfrage.
+.   Auf Planeten und Monden kann man landen wenn die Anfluggeschwindigket passt. Sonst gibts eine Kollision. (Bei erfolgreichen Anflug kommt man auf eine detailierte
+    Planeten / Mond Map)
+.   Die angezeigten Objekte sollen aus einer Übergeordneten UniverseMap bei Bedarf ausgecheckt werden um mit dem Spieler interagieren zu können und 
+    beim verlassen des Spieler bereichs mit ihrem neuen Status wider in der UniversMap eingecheckt werden. Die UniverseMap ist der persistente
+    Teil des Spiels.
+
+
+
